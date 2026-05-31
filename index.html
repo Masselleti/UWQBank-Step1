@@ -4000,7 +4000,7 @@ function updateSelectedInfo() {
             if (/\.(png|jpe?g|gif|webp|bmp)(\?|#|$)/i.test(href)) {
                 const filename = href.split('/').pop().split('\\').pop();
                 const fullPath = `./Data/${currentDatabasePath}/media/${filename}`;
-                openMediaModal(fullPath, link.getAttribute('title') || link.textContent || '');
+                openMediaModal(fullPath, link.getAttribute('title') || '');
                 return;
             }
             if (/^https?:\/\//i.test(href)) {
