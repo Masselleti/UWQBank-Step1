@@ -1298,10 +1298,12 @@ img {
 .learning-selected-info span{color:var(--primary);font-weight:600}
 #learning-start-btn:disabled{opacity:.5;cursor:not-allowed}
 #learning-categories-tree .tree-view{
-  column-count: 2;
-  column-gap: 32px;
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
   max-height: none;
 }
+#learning-categories-tree .tree-view > .tree-col{ flex: 1 1 0; min-width: 0; }
 /* Exam topic tree: taller frame so less scrolling after expanding a subject */
 #exam-categories .tree-view{
   max-height: 75vh;
@@ -1313,7 +1315,7 @@ img {
   display: block;
 }
 @media (max-width: 900px){
-  #learning-categories-tree .tree-view{ column-count: 1; }
+  #learning-categories-tree .tree-view{ flex-direction: column; }
 }
 
 /* ===== Lab Values modal (USMLE-style reference popup) ===== */
@@ -2668,11 +2670,15 @@ body.in-nbme-question #exam-setup { display: none !important; }
 		}
 
 		function renderLearningCheckboxTree(tree, container) {
-			tree.forEach(subject => {
+			const colA = document.createElement('div'); colA.className = 'tree-col';
+			const colB = document.createElement('div'); colB.className = 'tree-col';
+			container.appendChild(colA); container.appendChild(colB);
+			const __per = Math.ceil(tree.length / 2);
+			tree.forEach((subject, idx) => {
 				const subjectNode = makeLearningTreeNode({
 					label: subject.name, count: subject.count, level: 0, type: 'subject'
 				});
-				container.appendChild(subjectNode.nodeDiv);
+				(idx < __per ? colA : colB).appendChild(subjectNode.nodeDiv);
 
 				subject.children.forEach(group => {
 					const groupNode = makeLearningTreeNode({
