@@ -1281,6 +1281,27 @@ img {
     padding: 6px 14px;
     vertical-align: top;
 }
+/* Data tables in the question stem (2+ rows, e.g. the RR / P-value table)
+   get the same grid borders as explanation tables. Single-row callout
+   boxes ("The following vignette applies...") and the column-header
+   alignment tables are intentionally left borderless. */
+.nbme-skin.uw-skin .question-stem table:has(tr + tr):not(.uw-stem-column-header) {
+    border-collapse: collapse !important;
+    border: 1px solid #b0b8c4 !important;
+    margin: 12px 0 !important;
+    width: auto !important;
+}
+.nbme-skin.uw-skin .question-stem table:has(tr + tr):not(.uw-stem-column-header) td,
+.nbme-skin.uw-skin .question-stem table:has(tr + tr):not(.uw-stem-column-header) th {
+    border: 1px solid #b0b8c4 !important;
+    padding: 6px 14px !important;
+}
+/* Reverse-color (dark) mode: match the dark grid used for explanation tables. */
+.nbme-skin.uw-skin.nbme-reverse .question-stem table:has(tr + tr):not(.uw-stem-column-header),
+.nbme-skin.uw-skin.nbme-reverse .question-stem table:has(tr + tr):not(.uw-stem-column-header) td,
+.nbme-skin.uw-skin.nbme-reverse .question-stem table:has(tr + tr):not(.uw-stem-column-header) th {
+    border-color: #4a5562 !important;
+}
 
 /* Hierarchical checkbox tree for the topic selector. */
 .tree-node{margin:5px 0}
