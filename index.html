@@ -3364,6 +3364,8 @@ body.in-nbme-question #exam-setup { display: none !important; }
             learningAnswered = true;
             // Persist the choice (in-memory) so it restores on navigation.
             userAnswers[questionId] = { answerId: selectedId, isCorrect };
+            // Recolor the sidebar bullet immediately, not on next navigation.
+            if (typeof uwRenderSidebar === 'function') uwRenderSidebar();
 
             document.getElementById(`commentary-${questionId}`).classList.add('show');
 
@@ -3912,7 +3914,8 @@ function updateSelectedInfo() {
 			console.log('Answer selected:', qId, answerId, isCorrect);
 			
 			userAnswers[qId] = { answerId, isCorrect };
-			
+			if (typeof uwRenderSidebar === 'function') uwRenderSidebar();
+
 			const options = document.querySelectorAll('.answer-option');
 			options.forEach(opt => opt.classList.remove('selected'));
 			
