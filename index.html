@@ -4368,12 +4368,6 @@ function updateSelectedInfo() {
             
             modalContent.appendChild(imgWrapper);
             
-            if (caption) {
-                const captionDiv = document.createElement('div');
-                captionDiv.className = 'modal-caption';
-                captionDiv.textContent = caption;
-                modalContent.appendChild(captionDiv);
-            }
             
             modal.classList.add('show');
         }
