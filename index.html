@@ -4322,6 +4322,9 @@ function updateSelectedInfo() {
 
         function generateMediaHTML(html) {
             if (!html) return '';
+            // Collapse the empty space UWorld's markup leaves right after a
+            // table (trailing <br>/&nbsp;/whitespace before the next block).
+            html = html.replace(/(<\/table>)(?:\s|&nbsp;|<br\s*\/?>)+/gi, '$1');
             const temp = document.createElement('div');
             temp.innerHTML = stripStyles(html);
             
