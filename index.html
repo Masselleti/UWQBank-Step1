@@ -5239,6 +5239,26 @@ function closeModals() {
     stem.ontouchend = function() {
       setTimeout(handleSelection, 80);
     };
+    // Triple-click selects a whole paragraph, but the native selection can
+    // spill past the stem (its end lands at the start of the next block), so
+    // the normal mouseup path rejects it. Explicitly select the clicked
+    // block's contents within the stem, then show the palette.
+    stem.onclick = function(e) {
+      if (e.detail < 3) return;
+      let block = e.target;
+      while (block && block !== stem && block.parentNode && block.parentNode !== stem) {
+        block = block.parentNode;
+      }
+      if (!block || !stem.contains(block)) block = stem;
+      try {
+        const r = document.createRange();
+        r.selectNodeContents(block);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+      } catch (err) { return; }
+      setTimeout(handleSelection, 0);
+    };
   }
 
   palette.addEventListener('click', function(e) {
