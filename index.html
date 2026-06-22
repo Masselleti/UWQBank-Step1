@@ -4364,15 +4364,29 @@ function updateSelectedInfo() {
                 media = document.createElement('video');
                 media.controls = true;
                 media.autoplay = true;
+                media.src = src;
             } else if (/\.mp3(\?|#|$)/i.test(src)) {
                 media = document.createElement('audio');
                 media.controls = true;
                 media.autoplay = true;
+                media.src = src;
             } else {
                 media = document.createElement('img');
                 media.alt = caption || '';
+                // GitHub Pages is case-sensitive; some DB refs use .JPG while the
+                // committed file is .jpg (works locally on case-insensitive macOS
+                // but 404s when served). Retry filename-case/prefix candidates,
+                // same fallback the inline images use.
+                const slash = src.lastIndexOf('/');
+                const base = slash >= 0 ? src.slice(0, slash + 1) : '';
+                const filename = slash >= 0 ? src.slice(slash + 1) : src;
+                const cands = mediaCandidates(filename);
+                media.setAttribute('data-ma-base', base);
+                media.setAttribute('data-ma-cands', JSON.stringify(cands));
+                media.setAttribute('data-ma-idx', '0');
+                media.setAttribute('onerror', 'maTryNextMedia(this)');
+                media.src = base + cands[0];
             }
-            media.src = src;
             imgWrapper.appendChild(media);
             
             modalContent.appendChild(imgWrapper);
