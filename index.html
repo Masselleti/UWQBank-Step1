@@ -5193,7 +5193,15 @@ function closeModals() {
 
   function clearAllHighlights() {
     if (!currentStem) return;
-    const spans = currentStem.querySelectorAll('.hl-yellow, .hl-green, .hl-blue');
+    const all = currentStem.querySelectorAll('.hl-yellow, .hl-green, .hl-blue');
+    // Only clear highlights that intersect the current selection, so removing
+    // one phrase doesn't wipe the other highlights in the vignette. (If there
+    // is somehow no active selection, fall back to clearing everything.)
+    const spans = currentRange
+      ? Array.prototype.filter.call(all, function (sp) {
+          try { return currentRange.intersectsNode(sp); } catch (e) { return false; }
+        })
+      : Array.prototype.slice.call(all);
     spans.forEach(sp => {
       const parent = sp.parentNode;
       while (sp.firstChild) {
@@ -5201,6 +5209,9 @@ function closeModals() {
       }
       parent.removeChild(sp);
     });
+    if (currentStem.normalize) currentStem.normalize();
+    const sel = window.getSelection();
+    if (sel) sel.removeAllRanges();
     hidePalette();
     saveHighlights();
   }
