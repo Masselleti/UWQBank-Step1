@@ -3386,6 +3386,39 @@ body.in-nbme-question #exam-setup { display: none !important; }
             });
         }
 
+        // Reveal the correct answer + explanation without recording a choice
+        // (a study "peek"). Triggered by the spacebar in Learning mode.
+        function revealLearningAnswer() {
+            if (currentMode !== 'learning' || learningAnswered) return false;
+            const questionObj = currentQuestions[currentQuestionIndex];
+            if (!questionObj) return false;
+            let questionData;
+            try { questionData = getQuestionData(questionObj.id); } catch (e) { return false; }
+            if (!questionData || !questionData.answers || !questionData.answers.length) return false;
+            learningAnswered = true;
+            const commEl = document.getElementById('commentary-' + questionObj.id);
+            if (commEl) commEl.classList.add('show');
+            questionData.answers.forEach(answer => {
+                if (answer.isCorrect) {
+                    const optionEl = document.querySelector('.answer-option[data-option-id="' + answer.answerID + '"]');
+                    if (optionEl) optionEl.classList.add('correct');
+                }
+            });
+            return true;
+        }
+        // Spacebar reveals the answer in Learning mode (once); afterwards space
+        // scrolls normally. Ignored in inputs and while a modal is open.
+        document.addEventListener('keydown', function(e) {
+            if (e.key !== ' ' && e.code !== 'Space' && e.keyCode !== 32) return;
+            const t = e.target;
+            if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+            if (!document.body.classList.contains('in-nbme-question')) return;
+            if (currentMode !== 'learning' || learningAnswered) return;
+            if (document.querySelector('.modal.show, #lv-overlay.is-open')) return;
+            e.preventDefault();
+            revealLearningAnswer();
+        });
+
         async function previousLearningQuestion() {
             if (currentQuestionIndex > 0) {
                 currentQuestionIndex--;
