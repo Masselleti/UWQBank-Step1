@@ -3208,7 +3208,7 @@ body.in-nbme-question #exam-setup { display: none !important; }
             learningAnswered = (userAnswers[questionObj.id] !== undefined);
 
             const flagKey = `MA_FLAG|||${questionObj.dbPath}|||${questionObj.id}`;
-            const isFlagged = sessionStorage.getItem(flagKey) === 'true';
+            const isFlagged = localStorage.getItem(flagKey) === 'true';
             const total = currentQuestions.length;
             const idx = currentQuestionIndex + 1;
             const isLast = currentQuestionIndex === total - 1;
@@ -3834,7 +3834,7 @@ function updateSelectedInfo() {
             const idx = currentQuestionIndex + 1;
             const isLast = currentQuestionIndex === total - 1;
             const flagKey = `MA_FLAG|||${questionObj.dbPath}|||${questionObj.id}`;
-            const isFlagged = sessionStorage.getItem(flagKey) === 'true';
+            const isFlagged = localStorage.getItem(flagKey) === 'true';
 
             let html = `
                 <div class="uw-header">
@@ -4723,17 +4723,21 @@ function updateSelectedInfo() {
             if (si && win) si.addEventListener('change', () => win.classList.toggle('lv-show-si', si.checked));
         })();
 
-        // Clear all saved highlights + flags + in-memory answer state when
-        // leaving a quiz so each new session starts completely clean.
-        // Preserves user preferences such as font scale.
+        // Clear per-attempt state (answer-choice strike-outs + in-memory
+        // answer results) when leaving a quiz, so each new attempt starts
+        // fresh. Permanent edits — highlights (HL_) and flags (MA_FLAG) —
+        // live in localStorage and are intentionally NOT touched here.
+        // Also preserves user preferences such as font scale.
         function uwClearSessionData() {
             try {
                 const keysToRemove = [];
                 for (let i = 0; i < sessionStorage.length; i++) {
                     const key = sessionStorage.key(i);
                     if (!key) continue;
-                    // Wipe quiz session keys; keep user-preference keys.
-                    if (key.startsWith('HL_') || key.startsWith('MA_FLAG') || key.startsWith('MA_STRIKE')) {
+                    // Wipe only per-attempt strike-outs. Highlights (HL_) and
+                    // flags (MA_FLAG) now persist in localStorage, so they are
+                    // deliberately left untouched here.
+                    if (key.startsWith('MA_STRIKE')) {
                         keysToRemove.push(key);
                     }
                 }
@@ -4873,7 +4877,7 @@ function updateSelectedInfo() {
                 const ans = userAnswers[q.id];
                 const isCurrent = i === currentQuestionIndex;
                 const flagKey = 'MA_FLAG|||' + q.dbPath + '|||' + q.id;
-                const isFlagged = sessionStorage.getItem(flagKey) === 'true';
+                const isFlagged = localStorage.getItem(flagKey) === 'true';
                 let cls = 'uw-q-item';
                 if (isCurrent) cls += ' is-current';
                 if (ans) {
@@ -4901,9 +4905,9 @@ function updateSelectedInfo() {
         }
         function uwToggleMark(ev, flagKey) {
             ev.stopPropagation();
-            const isFlagged = sessionStorage.getItem(flagKey) === 'true';
-            if (isFlagged) sessionStorage.removeItem(flagKey);
-            else sessionStorage.setItem(flagKey, 'true');
+            const isFlagged = localStorage.getItem(flagKey) === 'true';
+            if (isFlagged) localStorage.removeItem(flagKey);
+            else localStorage.setItem(flagKey, 'true');
             uwRenderSidebar();
         }
         // Strike-outs persist for the session (like flags/highlights) under a
@@ -5155,7 +5159,7 @@ function closeModals() {
     const key = computeStorageKey(stem);
     currentKey = key;
     try {
-      const saved = sessionStorage.getItem(key);
+      const saved = localStorage.getItem(key);
       if (saved) {
         stem.innerHTML = saved;
       }
@@ -5167,7 +5171,7 @@ function closeModals() {
   function saveHighlights() {
     if (!currentStem || !currentKey) return;
     try {
-      sessionStorage.setItem(currentKey, currentStem.innerHTML);
+      localStorage.setItem(currentKey, currentStem.innerHTML);
     } catch (e) {
       console.warn('Highlight save error', e);
     }
