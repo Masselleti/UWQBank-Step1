@@ -1451,7 +1451,7 @@ img {
 /* ============================================================
    UWorld skin (.nbme-skin.uw-skin) — full question-view UI
    ============================================================ */
-:root { --text-scale: 1; }
+:root { --text-scale: 1.1; }
 
 /* Dashboard back button shown when inside a question. */
 .topbar-back-btn {
@@ -4831,7 +4831,7 @@ function updateSelectedInfo() {
             w.document.close();
         }
         function uwAdjustFont(delta) {
-            let f = parseFloat(localStorage.getItem('ma_font_scale')) || 1;
+            let f = parseFloat(localStorage.getItem('ma_font_scale')) || 1.1;
             f += delta;
             if (f < 0.8) f = 0.8;
             if (f > 1.5) f = 1.5;
