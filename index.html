@@ -1777,6 +1777,26 @@ body.in-nbme-question #exam-setup { display: none !important; }
 .uw-bottom-tool.is-end { color: #c0392b; }
 .uw-bottom-tool.is-end:hover { color: #a52a1f; }
 
+/* iPad / touch devices: let the question view scroll as a normal page so the
+   top bar + header move up when scrolling down. Desktop keeps the pinned,
+   exam-style shell (this only applies to touch-primary devices). */
+@media (hover: none) and (pointer: coarse) {
+    html:has(body.in-nbme-question), body.in-nbme-question {
+        height: auto !important; min-height: 100dvh !important; overflow: visible !important;
+    }
+    .nbme-skin.uw-skin {
+        position: static !important;
+        height: auto !important; min-height: 100dvh !important; max-height: none !important;
+        overflow: visible !important;
+        grid-template-rows: auto auto auto !important;
+    }
+    .nbme-skin.uw-skin .uw-body { overflow: visible !important; align-items: start !important; }
+    /* Keep the (up to 3641-item) question navigator viewport-bounded with its
+       own scroll so it can't inflate the page; sticky so it stays reachable. */
+    .nbme-skin.uw-skin .uw-sidebar { align-self: start !important; position: sticky !important; top: 0 !important; max-height: 100dvh !important; overflow-y: auto !important; }
+    .nbme-skin.uw-skin .uw-main { overflow-y: visible !important; height: auto !important; max-height: none !important; }
+}
+
 /* Column-header alignment for FSH/TSH-style question tables. */
 .nbme-skin.uw-skin .question-stem > table.uw-stem-column-header {
     margin-left: 67px !important; margin-top: 6px !important;
