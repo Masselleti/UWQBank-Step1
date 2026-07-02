@@ -367,6 +367,11 @@ a:hover{filter:brightness(.9)}
 .commentary h4{color:#856404;margin-bottom:15px;font-size:1.2em}
 .commentary-content{line-height:1.8;color:#000!important}
 .commentary-content *{color:#000!important;background:transparent!important}
+/* ...but keep highlighter marks visible in the explanation (the rule above strips
+   imported-content backgrounds and was making applied highlights invisible). */
+.commentary-content .hl-yellow,.commentary-content .hl-yellow *{background:#fff6a7!important}
+.commentary-content .hl-green,.commentary-content .hl-green *{background:#c8f7c5!important}
+.commentary-content .hl-blue,.commentary-content .hl-blue *{background:#cfe9ff!important}
 
 .navigation{display:flex;justify-content:space-between;gap:15px;margin-top:30px;position:relative}
 .navigation button{padding:15px 35px;font-size:1.1em;border:none;border-radius:10px;cursor:pointer;background:var(--primary);color:#fff;font-weight:bold;transition:all .3s}
