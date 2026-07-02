@@ -5093,6 +5093,10 @@ function closeModals() {
     return range;
   }
 
+  let uwHlPointer = null;
+  document.addEventListener('mouseup', function (e) { uwHlPointer = { x: e.clientX, y: e.clientY, t: Date.now() }; }, true);
+  document.addEventListener('touchend', function (e) { var t0 = e.changedTouches && e.changedTouches[0]; if (t0) uwHlPointer = { x: t0.clientX, y: t0.clientY, t: Date.now() }; }, true);
+
   function showPalette(range) {
     if (!range) return;
     const rect = range.getBoundingClientRect();
@@ -5100,9 +5104,12 @@ function closeModals() {
     palette.style.display = 'flex';
     const paletteWidth = palette.offsetWidth || 140;
     const paletteHeight = palette.offsetHeight || 36;
-    let top = rect.top + window.scrollY - paletteHeight - 8;
-    let left = rect.left + window.scrollX + rect.width / 2 - paletteWidth / 2;
-    if (top < 0) top = rect.bottom + window.scrollY + 8;
+    const p = (uwHlPointer && Date.now() - uwHlPointer.t < 1500) ? uwHlPointer : null;
+    const ax = p ? p.x : rect.left + rect.width / 2;
+    const ay = p ? p.y : rect.top;
+    let top = ay + window.scrollY - paletteHeight - 8;
+    let left = ax + window.scrollX - paletteWidth / 2;
+    if (top < 0) top = (p ? ay : rect.bottom) + window.scrollY + 8;
     if (left < 8) left = 8;
     palette.style.top = top + 'px';
     palette.style.left = left + 'px';
