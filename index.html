@@ -5031,59 +5031,65 @@ function closeModals() {
 </script>
 
 <script>
-// ===== MEDIUM TEXT HIGHLIGHTER (3 colors + localStorage) =====
+// ===== MEDIUM TEXT HIGHLIGHTER (3 colors + storage) =====
+// Highlightable areas: the question stem AND the explanation/commentary.
+// Each area persists its own highlight HTML under the question's storage key
+// plus a per-area suffix, so explanation highlights never overwrite the stem's.
 (function() {
   const palette = document.getElementById('highlight-palette');
   if (!palette) return;
 
   const clearBtn = palette.querySelector('#hp-clear');
-  let currentStem = null;
+  const store = localStorage;
+  const AREA_DEFS = [
+    { selector: '.question-stem',      suffix: '' },      // '' keeps back-compat with previously saved stem highlights
+    { selector: '.commentary-content', suffix: '::exp' }
+  ];
+
+  let currentArea = null;
   let currentRange = null;
-  let currentKey = null;
 
-    function computeStorageKey(stem) {
-    // اگر اپ قبلاً یک کلید مشخص برای این سؤال ست کرده باشد، از همان استفاده کن
-    if (window.currentQuestionStorageKey) {
-      return window.currentQuestionStorageKey;
-    }
-
-    // در غیر این صورت: fallback روی هش متن
-    const txt = (stem.textContent || '').slice(0, 5000);
+  function baseStorageKey() {
+    // Prefer the app's per-question key so the stem and its explanation share a base.
+    if (window.currentQuestionStorageKey) return window.currentQuestionStorageKey;
+    const stem = document.querySelector('.question-stem');
+    const txt = stem ? (stem.textContent || '').slice(0, 5000) : '';
     let hash = 0;
-    for (let i = 0; i < txt.length; i++) {
-      hash = (hash * 31 + txt.charCodeAt(i)) | 0;
-    }
+    for (let i = 0; i < txt.length; i++) hash = (hash * 31 + txt.charCodeAt(i)) | 0;
     return 'HL_' + window.location.pathname + '_' + hash;
   }
-
-
-  function loadHighlights(stem) {
-    const key = computeStorageKey(stem);
-    currentKey = key;
-    try {
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        stem.innerHTML = saved;
-      }
-    } catch (e) {
-      console.warn('Highlight load error', e);
-    }
+  function areaKey(el) {
+    const def = AREA_DEFS.find(d => el.matches && el.matches(d.selector));
+    return baseStorageKey() + (def ? def.suffix : '');
   }
 
-  function saveHighlights() {
-    if (!currentStem || !currentKey) return;
-    try {
-      localStorage.setItem(currentKey, currentStem.innerHTML);
-    } catch (e) {
-      console.warn('Highlight save error', e);
-    }
+  function loadHighlights(el) {
+    try { const saved = store.getItem(areaKey(el)); if (saved) el.innerHTML = saved; }
+    catch (e) { console.warn('Highlight load error', e); }
+  }
+  function saveArea(el) {
+    if (!el) return;
+    try { store.setItem(areaKey(el), el.innerHTML); }
+    catch (e) { console.warn('Highlight save error', e); }
   }
 
+  function activeAreaFor(range) {
+    let node = range.commonAncestorContainer;
+    const el = node.nodeType === 1 ? node : node.parentNode;
+    if (!el || !el.closest) return null;
+    for (const def of AREA_DEFS) {
+      const a = el.closest(def.selector);
+      if (a) return a;
+    }
+    return null;
+  }
   function getSelectionRange() {
     const sel = window.getSelection();
     if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return null;
     const range = sel.getRangeAt(0);
-    if (!currentStem || !currentStem.contains(range.commonAncestorContainer)) return null;
+    const area = activeAreaFor(range);
+    if (!area) return null;
+    currentArea = area;
     return range;
   }
 
@@ -5091,104 +5097,73 @@ function closeModals() {
     if (!range) return;
     const rect = range.getBoundingClientRect();
     if (!rect || (rect.width === 0 && rect.height === 0)) return;
-
     palette.style.display = 'flex';
-
     const paletteWidth = palette.offsetWidth || 140;
     const paletteHeight = palette.offsetHeight || 36;
-
     let top = rect.top + window.scrollY - paletteHeight - 8;
     let left = rect.left + window.scrollX + rect.width / 2 - paletteWidth / 2;
-
-    if (top < 0) {
-      top = rect.bottom + window.scrollY + 8;
-    }
+    if (top < 0) top = rect.bottom + window.scrollY + 8;
     if (left < 8) left = 8;
-
     palette.style.top = top + 'px';
     palette.style.left = left + 'px';
   }
-
   function hidePalette() {
     palette.style.display = 'none';
     currentRange = null;
   }
 
   function applyHighlight(colorClass) {
-    if (!currentRange || !currentStem) return;
-
+    if (!currentRange || !currentArea) return;
+    const area = currentArea;
     const span = document.createElement('span');
     span.className = colorClass;
-
     span.appendChild(currentRange.extractContents());
     currentRange.insertNode(span);
-
-    const sel = window.getSelection();
-    if (sel) sel.removeAllRanges();
-
+    const sel = window.getSelection(); if (sel) sel.removeAllRanges();
     hidePalette();
-    saveHighlights();
+    if (area.normalize) area.normalize();
+    saveArea(area);
   }
 
   function clearAllHighlights() {
-    if (!currentStem) return;
-    const all = currentStem.querySelectorAll('.hl-yellow, .hl-green, .hl-blue');
-    // Only clear highlights that intersect the current selection, so removing
-    // one phrase doesn't wipe the other highlights in the vignette. (If there
-    // is somehow no active selection, fall back to clearing everything.)
+    const area = currentArea;
+    if (!area) return;
+    // Only clear highlights that intersect the current selection, so removing one
+    // phrase doesn't wipe the other highlights in the same area.
+    const all = area.querySelectorAll('.hl-yellow, .hl-green, .hl-blue');
     const spans = currentRange
       ? Array.prototype.filter.call(all, function (sp) {
           try { return currentRange.intersectsNode(sp); } catch (e) { return false; }
         })
       : Array.prototype.slice.call(all);
-    spans.forEach(sp => {
+    spans.forEach(function (sp) {
       const parent = sp.parentNode;
-      while (sp.firstChild) {
-        parent.insertBefore(sp.firstChild, sp);
-      }
+      while (sp.firstChild) parent.insertBefore(sp.firstChild, sp);
       parent.removeChild(sp);
     });
-    if (currentStem.normalize) currentStem.normalize();
-    const sel = window.getSelection();
-    if (sel) sel.removeAllRanges();
+    if (area.normalize) area.normalize();
+    const sel = window.getSelection(); if (sel) sel.removeAllRanges();
     hidePalette();
-    saveHighlights();
+    saveArea(area);
   }
 
   function handleSelection() {
-    if (!currentStem) return;
     const range = getSelectionRange();
-    if (!range) {
-      hidePalette();
-      return;
-    }
+    if (!range) { hidePalette(); return; }
     currentRange = range.cloneRange();
     showPalette(range);
   }
 
-  function attachToStem(stem) {
-    if (!stem || stem === currentStem) return;
-
-    currentStem = stem;
-    loadHighlights(stem);
-
-    stem.onmouseup = function() {
-      setTimeout(handleSelection, 50);
-    };
-    stem.ontouchend = function() {
-      setTimeout(handleSelection, 80);
-    };
-    // Triple-click selects a whole paragraph, but the native selection can
-    // spill past the stem (its end lands at the start of the next block), so
-    // the normal mouseup path rejects it. Explicitly select the clicked
-    // block's contents within the stem, then show the palette.
-    stem.onclick = function(e) {
+  function attachArea(el) {
+    el.onmouseup = function () { setTimeout(handleSelection, 50); };
+    el.ontouchend = function () { setTimeout(handleSelection, 80); };
+    // Triple-click selects a whole paragraph; the native selection can spill past
+    // the area, so select the clicked block's contents within the area instead.
+    el.onclick = function (e) {
       if (e.detail < 3) return;
       let block = e.target;
-      while (block && block !== stem && block.parentNode && block.parentNode !== stem) {
-        block = block.parentNode;
-      }
-      if (!block || !stem.contains(block)) block = stem;
+      while (block && block !== el && block.parentNode && block.parentNode !== el) block = block.parentNode;
+      if (!block || !el.contains(block)) block = el;
       try {
         const r = document.createRange();
         r.selectNodeContents(block);
@@ -5200,7 +5175,7 @@ function closeModals() {
     };
   }
 
-  palette.addEventListener('click', function(e) {
+  palette.addEventListener('click', function (e) {
     const colorBtn = e.target.closest('.hp-color');
     if (colorBtn) {
       const cls = colorBtn.getAttribute('data-color');
@@ -5208,33 +5183,35 @@ function closeModals() {
       return;
     }
   });
-
   if (clearBtn) {
-    clearBtn.addEventListener('click', function() {
-      clearAllHighlights();
-    });
+    clearBtn.addEventListener('click', function () { clearAllHighlights(); });
   }
 
-  document.addEventListener('scroll', function() {
-    hidePalette();
-  });
-
-  document.addEventListener('click', function(e) {
+  document.addEventListener('scroll', function () { hidePalette(); });
+  document.addEventListener('click', function (e) {
     if (!palette.contains(e.target)) {
       const sel = window.getSelection();
-      if (!sel || sel.isCollapsed) {
-        hidePalette();
-      }
+      if (!sel || sel.isCollapsed) hidePalette();
     }
   });
 
-      // Watch for question-stem creation in Learning / Exam / Review
+  // Attach handlers + restore highlights as the stem and explanation appear
+  // across Learning / Exam / Review.
+  const attached = new WeakSet();
+  const lastEl = {};
   setInterval(function() {
-    const stem = document.querySelector('.question-stem');
-    if (!stem) return;
-    if (stem !== currentStem) {
-      attachToStem(stem);
-    }
+    AREA_DEFS.forEach(function (def) {
+      const el = document.querySelector(def.selector);
+      if (!el) return;
+      if (el !== lastEl[def.selector]) {
+        lastEl[def.selector] = el;
+        if (!attached.has(el)) {
+          attached.add(el);
+          attachArea(el);
+          loadHighlights(el);
+        }
+      }
+    });
   }, 500);
 })();
 </script>
